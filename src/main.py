@@ -1,35 +1,29 @@
-import json
 import os.path
+from typing import Union
 
 import aiofiles
 import auditok
 import uvicorn
-
-from typing import Annotated, Union
-
 import whisper_timestamped as whisper
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, UploadFile
 
 from src.config import Config
 
 app = FastAPI()
 
 
-def whisper_transcribe(config, audio_path):
+def init_model(config: Config):
+    return whisper.load_model(config.whisper_model_size, device=config.device)
+
+
+def whisper_transcribe(model, audio_path):
     audio = whisper.load_audio(audio_path)
-    whisper_model = whisper.load_model(config.whisper_model, device=config.device)
-    return whisper.transcribe(whisper_model, audio)
+    return whisper.transcribe(model, audio)
 
 
-# def main():
-#     config = Config()
-#     result = whisper_transcribe(config)
-#
-#     with open("whisper_result.json", "w") as out_file:
-#         out_file.write(json.dumps(result, indent=2, ensure_ascii=False))
-#
-#     region = auditok.load(config.audio_path)  # returns an AudioRegion object
-#     regions = region.split_and_plot(drop_trailing_silence=True)  # or just region.splitp()
+def find_pauses():
+    region = auditok.load(config.local_tmp_path)  # returns an AudioRegion object
+    return region.split(drop_trailing_silence=True)
 
 
 @app.get("/")
@@ -43,15 +37,15 @@ async def create_upload_file(file: Union[UploadFile, None] = None):
         return {"message": "No upload file sent"}
     else:
         #  save uploaded file to tmp
-
         local_audio_path = os.path.join(config.local_tmp_path, file.filename)
         async with aiofiles.open(local_audio_path, 'wb') as out_file:
             content = await file.read()  # async read
             await out_file.write(content)  # async write
-        return whisper_transcribe(config, local_audio_path)
+        return whisper_transcribe(model, local_audio_path)
 
 
 if __name__ == '__main__':
     config = Config()
+    model = init_model(config)
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
