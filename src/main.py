@@ -2,28 +2,22 @@ import os.path
 from typing import Union
 
 import aiofiles
-import auditok
 import uvicorn
-import whisper_timestamped as whisper
 from fastapi import FastAPI, UploadFile
 
 from src.config import Config
+from src.silences import find_silences
+from src.whisper_funcs import whisper_transcribe, init_model
 
 app = FastAPI()
 
 
-def init_model(config: Config):
-    return whisper.load_model(config.whisper_model_size, device=config.device)
-
-
-def whisper_transcribe(model, audio_path):
-    audio = whisper.load_audio(audio_path)
-    return whisper.transcribe(model, audio)
-
-
-def find_pauses():
-    region = auditok.load(config.local_tmp_path)  # returns an AudioRegion object
-    return region.split(drop_trailing_silence=True)
+async def store_audio_file(file):
+    local_audio_path = os.path.join(config.local_tmp_path, file.filename)
+    async with aiofiles.open(local_audio_path, 'wb') as out_file:
+        content = await file.read()  # async read
+        await out_file.write(content)  # async write
+    return local_audio_path
 
 
 @app.get("/")
@@ -32,16 +26,23 @@ def read_root():
 
 
 @app.post("/transcribe")
-async def create_upload_file(file: Union[UploadFile, None] = None):
+async def transcribe_audio_file(file: Union[UploadFile, None] = None):
     if not file:
         return {"message": "No upload file sent"}
     else:
-        #  save uploaded file to tmp
-        local_audio_path = os.path.join(config.local_tmp_path, file.filename)
-        async with aiofiles.open(local_audio_path, 'wb') as out_file:
-            content = await file.read()  # async read
-            await out_file.write(content)  # async write
+        local_audio_path = await store_audio_file(file)
         return whisper_transcribe(model, local_audio_path)
+
+
+@app.post("/silences")
+async def find_silences_in_file(file: Union[UploadFile, None] = None):
+    if not file:
+        return {"message": "No upload file sent"}
+    else:
+        local_audio_path = await store_audio_file(file)
+        return {
+            "silences": find_silences(local_audio_path)
+        }
 
 
 if __name__ == '__main__':
