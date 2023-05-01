@@ -39,9 +39,13 @@ async def upload_file(file: Union[UploadFile, None] = None):
         }
 
 
-@app.get("/pause_image")
-async def image(file_path: str):
-    region = auditok.load(file_path)
+@app.post("/pause_image")
+async def image(file: Union[UploadFile, None] = None):
+    if not file:
+        return {"message": "No upload file sent"}
+    else:
+        local_audio_path = await store_audio_file(file)
+    region = auditok.load(local_audio_path)
     _, tmp_file = tempfile.mkstemp(suffix=".png")
     _ = region.split_and_plot(drop_trailing_silence=True, save_as=tmp_file, show=False)
     # TODO remove file after returning
