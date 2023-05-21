@@ -23,3 +23,36 @@ Open http://0.0.0.0:8000/docs in your browser and upload audio via the Swagger U
 ### Example data
 
 The example data is from LibriVox: https://librivox.org/effi-briest-by-theodor-fontane/
+
+# Speech Objects Mockup
+
+Speech objects are to be created when a new audio file is uploaded to the service via audio/POST
+
+```{
+  "audio_path": "path/to/audio_file",
+  "silences": [
+    {
+      "start": 0,
+      "end": 0.499
+    }
+  ],
+  "whisper_transcript": {
+    "text": "...",
+    "segments": []
+  },
+  "original_transcript": "",
+  "aligned_transcript": {
+    "word": "test",
+    "start": 0.15,
+    "end": 0.85
+  },
+  "waveform_image": "path/to/image",
+  "user": "user_id"
+}
+```
+
+The response after the successful upload should return a link to both the audio file for downloading and
+the URI to the newly created speech object. While the speech object is being created, a GET should return 
+the estimated percentage of transcription. 
+
+
