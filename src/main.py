@@ -7,12 +7,28 @@ import auditok
 import uvicorn
 from fastapi import FastAPI, UploadFile
 from fastapi.responses import FileResponse
-
+from fastapi.middleware.cors import CORSMiddleware
+import sys
+my_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(my_path)
 from src.config import Config
 from src.silences import find_silences
 from src.whisper_funcs import whisper_transcribe, init_model
 
 app = FastAPI()
+
+origins = [
+    # "http://localhost",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 async def store_audio_file(file):
