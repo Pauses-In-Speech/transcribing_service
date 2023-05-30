@@ -1,8 +1,11 @@
+from functools import lru_cache
+
 import whisper_timestamped as wt
 
 from src.config import Config
 
 
+@lru_cache
 def init_model(config: Config):
     return wt.load_model(config.whisper_model_size, device=config.device)
 

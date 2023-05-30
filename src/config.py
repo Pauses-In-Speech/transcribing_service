@@ -1,11 +1,20 @@
 import tempfile
+from functools import lru_cache
+from typing import Any
 
 import torch.cuda
+from pydantic import BaseModel
 
 
-class Config:
-    def __init__(self):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.audio_path = "../example_data/effibriest_01_fontane_64kb_short.mp3"
-        self.local_tmp_path = tempfile.mkdtemp()
-        self.whisper_model_size = "tiny"
+class Config(BaseModel):
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    local_tmp_path: str = tempfile.mkdtemp()
+    whisper_model_size: str = "tiny"
+
+    class Config:
+        frozen = True
+
+
+@lru_cache
+def get_config() -> Config:
+    return Config()
