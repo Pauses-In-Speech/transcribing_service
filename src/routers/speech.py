@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import auditok
 from fastapi import APIRouter, Depends
@@ -23,15 +24,15 @@ class Speech:
         if not any(x.id == new_id for x in speeches):
             self.id = new_id
 
-            self.speech_dir = os.path.join(config.local_tmp_path, self.id)
-            os.mkdir(self.speech_dir)
+            self.speech_dir = os.path.join(config.local_data_path, self.id)
+            Path(f"{config.local_data_path}/speech/{self.id}").mkdir(parents=True, exist_ok=True)
             self.audio_path = audio_file_path
 
             self.pause_image_path = os.path.join(self.speech_dir, "pause_image.png")
             self.save_pause_image()
             self.silences = find_silences(self.audio_path)
 
-            self.transcription = whisper_transcribe(init_model(config), self.audio_path)
+            self.transcription = whisper_transcribe(init_model(config.whisper_model_size, config.device), self.audio_path)
             speeches.append(self)
         else:
             print("This ID already exists!")
