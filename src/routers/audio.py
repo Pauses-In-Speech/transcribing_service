@@ -40,7 +40,7 @@ async def store_audio_file(file):
 
 
 def get_id_from_filename(filename: str) -> str:
-    return filename.split(".")[-1][0]
+    return filename.split(".")[:-1][0]
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)

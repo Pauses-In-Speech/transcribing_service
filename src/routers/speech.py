@@ -20,11 +20,11 @@ class Speech:
                  config: Config,
                  audio_file_path):
 
-        new_id = audio_file_path.split(".")[:-1][0]
+        new_id = audio_file_path.split(".")[-2].split("/")[-1]
         if not any(x.id == new_id for x in speeches):
             self.id = new_id
 
-            self.speech_dir = os.path.join(config.local_data_path, self.id)
+            self.speech_dir = f"{config.local_data_path}/speech/{new_id}"
             Path(f"{config.local_data_path}/speech/{self.id}").mkdir(parents=True, exist_ok=True)
             self.audio_path = audio_file_path
 
@@ -32,7 +32,8 @@ class Speech:
             self.save_pause_image()
             self.silences = find_silences(self.audio_path)
 
-            self.transcription = whisper_transcribe(init_model(config.whisper_model_size, config.device), self.audio_path)
+            self.transcription = whisper_transcribe(init_model(config.whisper_model_size, config.device),
+                                                    self.audio_path)
             speeches.append(self)
         else:
             print("This ID already exists!")
