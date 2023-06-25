@@ -3,16 +3,18 @@ from pathlib import Path
 
 import auditok
 from fastapi import APIRouter, Depends
+from sqlitedict import SqliteDict
 
-from src.config import Config
+from src.config import Config, get_config
 from src.silences import find_silences
 from src.whisper_funcs import whisper_transcribe, init_model
 
 router = APIRouter(
-    prefix="/speech"
+    prefix="/speech",
+    dependencies=[Depends(get_config)]
 )
 
-speeches = []
+speech_db_table = SqliteDict(get_config().db_name, tablename="speech", autocommit=True)
 
 
 class Speech:
@@ -21,7 +23,7 @@ class Speech:
                  audio_file_path):
 
         new_id = audio_file_path.split(".")[-2].split("/")[-1]
-        if not any(x.id == new_id for x in speeches):
+        if new_id not in speech_db_table:
             self.id = new_id
 
             self.speech_dir = f"{config.local_data_path}/speech/{new_id}"
@@ -34,7 +36,7 @@ class Speech:
 
             self.transcription = whisper_transcribe(init_model(config.whisper_model_size, config.device),
                                                     self.audio_path)
-            speeches.append(self)
+            speech_db_table[new_id] = self
         else:
             print("This ID already exists!")
 
@@ -45,12 +47,12 @@ class Speech:
 
 @router.get("/")
 def get_speeches():
-    return speeches
+    return speech_db_table.values()
 
 
 @router.get("/{speech_id}")
 async def get_speech(speech_id: str):
-    for s in speeches:
-        if s.id == speech_id:
-            return s
-    return {"Speech ID not in DB!"}
+    if speech_id in speech_db_table:
+        return speech_db_table[speech_id]
+    else:
+        return {"Speech ID not in DB!"}
