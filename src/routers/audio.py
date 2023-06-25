@@ -1,16 +1,14 @@
-from src.config import get_config
-from src.routers.speech import Speech
-
-import os
+from typing import Union
 
 import aiofiles
 from fastapi import APIRouter, Depends
-from typing import Union
 from fastapi import UploadFile, status
-
 from sqlitedict import SqliteDict
+from starlette.responses import FileResponse
 
-# from src.routers.speech import Speech
+from src.config import get_config
+from src.custom_classes.audio import Audio
+from src.routers.speech import Speech, create_speech
 
 router = APIRouter(
     prefix="/audio",
@@ -26,9 +24,17 @@ async def get_audios():
 
 
 @router.get("/{audio_id}")
-async def get_audios(audio_id: int):
+async def get_audio(audio_id: str):
     if audio_id in audio_db_table.keys():
         return audio_db_table[audio_id]
+
+
+@router.get("/download/{audio_id}")
+async def download_audio(audio_id: str):
+    if audio_id in audio_db_table.keys():
+        return FileResponse(path=audio_db_table[audio_id].file_path,
+                            filename=f"{audio_id}.{audio_db_table[audio_id].file_type}",
+                            media_type=audio_db_table[audio_id].content_type)
 
 
 async def store_audio_file(file):
@@ -39,14 +45,10 @@ async def store_audio_file(file):
     return local_audio_path
 
 
-def get_id_from_filename(filename: str) -> str:
-    return filename.split(".")[:-1][0]
-
-
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def upload_file(file: Union[UploadFile, None] = None):
-    new_audio_id = get_id_from_filename(file.filename)
-    if file.filename not in audio_db_table:
+    new_audio_id = file.filename.split(".")[:-1][0]
+    if new_audio_id not in audio_db_table:
         if file.content_type not in get_config().allowed_content_types:
             # TODO return correct http status code
             return {"message": "Document type not supported! Use mp3 or wav!"}
@@ -54,10 +56,12 @@ async def upload_file(file: Union[UploadFile, None] = None):
             return {"message": "No upload file sent"}
         else:
             local_audio_path = await store_audio_file(file)
-            audio_db_table[new_audio_id] = local_audio_path
-            Speech(get_config(), local_audio_path)
+            audio_db_table[new_audio_id] = Audio(local_audio_path,
+                                                 file.filename.split(".")[-1],
+                                                 file.content_type)
+            create_speech(get_config(), audio_db_table[new_audio_id])
             return {
-                "file_save_location": local_audio_path
+                "audio_id": new_audio_id
             }
     else:
         return {"File already exists"}

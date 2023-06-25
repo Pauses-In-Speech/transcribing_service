@@ -1,13 +1,10 @@
-import os
-from pathlib import Path
-
-import auditok
 from fastapi import APIRouter, Depends
 from sqlitedict import SqliteDict
+from starlette.responses import FileResponse
 
 from src.config import Config, get_config
-from src.silences import find_silences
-from src.whisper_funcs import whisper_transcribe, init_model
+from src.custom_classes.speech import Speech
+from src.routers.audio import Audio
 
 router = APIRouter(
     prefix="/speech",
@@ -17,32 +14,13 @@ router = APIRouter(
 speech_db_table = SqliteDict(get_config().db_name, tablename="speech", autocommit=True)
 
 
-class Speech:
-    def __init__(self,
-                 config: Config,
-                 audio_file_path):
-
-        new_id = audio_file_path.split(".")[-2].split("/")[-1]
-        if new_id not in speech_db_table:
-            self.id = new_id
-
-            self.speech_dir = f"{config.local_data_path}/speech/{new_id}"
-            Path(f"{config.local_data_path}/speech/{self.id}").mkdir(parents=True, exist_ok=True)
-            self.audio_path = audio_file_path
-
-            self.pause_image_path = os.path.join(self.speech_dir, "pause_image.png")
-            self.save_pause_image()
-            self.silences = find_silences(self.audio_path)
-
-            self.transcription = whisper_transcribe(init_model(config.whisper_model_size, config.device),
-                                                    self.audio_path)
-            speech_db_table[new_id] = self
-        else:
-            print("This ID already exists!")
-
-    def save_pause_image(self):
-        region = auditok.load(self.audio_path)
-        _ = region.split_and_plot(drop_trailing_silence=True, save_as=self.pause_image_path, show=False)
+def create_speech(config: Config, audio: Audio):
+    new_id = audio.file_path.split(".")[-2].split("/")[-1]
+    if new_id not in speech_db_table:
+        speech = Speech(config, audio)
+        speech_db_table[new_id] = speech
+    else:
+        print("This ID already exists!")
 
 
 @router.get("/")
@@ -56,3 +34,11 @@ async def get_speech(speech_id: str):
         return speech_db_table[speech_id]
     else:
         return {"Speech ID not in DB!"}
+
+
+@router.get("/pause_image/{speech_id}")
+async def get_pause_image(speech_id: str):
+    if speech_id in speech_db_table.keys():
+        return FileResponse(path=f"{speech_db_table[speech_id].speech_dir}/pause_image.png",
+                            filename=f"{speech_id}_pause_image.png]",
+                            media_type="image/png")
