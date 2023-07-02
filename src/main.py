@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 from src.config import Config
@@ -30,12 +31,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.delete("/db_and_data/")
+def clear_all_data():
+    message = ""
+    try:
+        shutil.rmtree('./data')
+    except:
+        message += "Data dir not found!"
+
+    try:
+        os.remove("./pins_db.sqlite")
+    except:
+        message += "Database not found!"
+
+    message += "Cleared data!"
+
+    try:
+        init_db(config.db_name)
+        init_dat_dir()
+    except:
+        message += "Could not reinitialize data and db!/n"
+
+    return {"message": message}
+
+
+def init_dat_dir():
+    Path("data").mkdir(exist_ok=True)
+    Path("data/audio").mkdir(parents=True, exist_ok=True)
+    Path("data/speech").mkdir(parents=True, exist_ok=True)
+
+
+def init_db(db_name):
+    return SqliteDict(db_name)
+
+
 if __name__ == '__main__':
     config = Config()
     model = init_model(config.whisper_model_size, config.device)
 
     # load db
-    db = SqliteDict(config.db_name)
+    db = init_db(config.db_name)
 
     if len(db) > 0:
         # check if files mentioned in db are there
@@ -44,9 +80,7 @@ if __name__ == '__main__':
     else:
         # starting from scratch, let's lay the folder structure
         # os.mkdir("data", exist)
-        Path("data").mkdir(exist_ok=True)
-        Path("data/audio").mkdir(parents=True, exist_ok=True)
-        Path("data/speech").mkdir(parents=True, exist_ok=True)
+        init_dat_dir()
 
     app.include_router(audio.router)
     app.include_router(speech.router)

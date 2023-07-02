@@ -61,7 +61,11 @@ async def upload_file(file: Union[UploadFile, None] = None):
                                                  file.content_type)
             create_speech(get_config(), audio_db_table[new_audio_id])
             return {
+                "message": "File successfully uploaded!",
                 "audio_id": new_audio_id
             }
     else:
-        return {"File already exists"}
+        return {
+            "message": "File already exists",
+            "audio_id": new_audio_id
+        }
