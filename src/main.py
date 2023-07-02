@@ -1,10 +1,6 @@
 import shutil
 from pathlib import Path
 
-from src.config import Config
-from src.whisper_funcs import init_model
-from src.routers import audio, speech
-
 import os.path
 import sys
 
@@ -16,6 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 my_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(my_path)
+
+from src.config import Config
+from src.whisper_funcs import init_model
+from src.routers import audio, speech
 
 app = FastAPI()
 
