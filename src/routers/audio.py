@@ -8,7 +8,7 @@ from starlette.responses import FileResponse
 
 from src.config import get_config
 from src.custom_classes.audio import Audio
-from src.routers.speech import Speech, create_speech
+from src.routers.speech import create_speech
 
 router = APIRouter(
     prefix="/audio",
@@ -18,6 +18,12 @@ router = APIRouter(
 audio_db_table = SqliteDict(get_config().db_name, tablename="audio", autocommit=True)
 
 
+def reload_audio_db():
+    global audio_db_table
+    audio_db_table = {}
+    audio_db_table = SqliteDict(get_config().db_name, tablename="audio", autocommit=True)
+
+
 @router.get("/")
 async def get_audios():
     return audio_db_table.values()
@@ -25,13 +31,13 @@ async def get_audios():
 
 @router.get("/{audio_id}")
 async def get_audio(audio_id: str):
-    if audio_id in audio_db_table.keys():
+    if audio_id in audio_db_table:
         return audio_db_table[audio_id]
 
 
 @router.get("/download/{audio_id}")
 async def download_audio(audio_id: str):
-    if audio_id in audio_db_table.keys():
+    if audio_id in audio_db_table:
         return FileResponse(path=audio_db_table[audio_id].file_path,
                             filename=f"{audio_id}.{audio_db_table[audio_id].file_type}",
                             media_type=audio_db_table[audio_id].content_type)
@@ -69,3 +75,16 @@ async def upload_file(file: Union[UploadFile, None] = None):
             "message": "File already exists",
             "audio_id": new_audio_id
         }
+
+
+@router.delete("/{audio_id}")
+def clear_all_data(audio_id: str):
+    if audio_id in audio_db_table:
+        res = audio_db_table.pop(audio_id)
+        if res:
+            return {"message": f"Deleted {audio_id}!"}
+        else:
+            return {"message": f"Could not delete {audio_id}"}
+
+    else:
+        return {"message": f"{audio_id} not found!"}

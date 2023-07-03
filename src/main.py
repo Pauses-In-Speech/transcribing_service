@@ -14,6 +14,8 @@ my_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(my_path)
 
 from src.config import Config
+from src.routers.audio import reload_audio_db
+from src.routers.speech import reload_speech_db
 from src.whisper_funcs import init_model
 from src.routers import audio, speech
 
@@ -49,6 +51,8 @@ def clear_all_data():
 
     try:
         init_db(config.db_name)
+        reload_audio_db()
+        reload_speech_db()
         init_dat_dir()
     except:
         message += "Could not reinitialize data and db!/n"
