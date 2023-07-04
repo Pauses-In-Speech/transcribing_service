@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import auditok
+from matplotlib import pyplot as plt
 
 from src.config import Config
 from src.custom_classes.silences import find_silences
@@ -27,15 +28,39 @@ class Speech:
         self.audio = audio
         self.speech_dir = f"{config.local_data_path}/speech/{new_id}"
         Path(f"{config.local_data_path}/speech/{self.id}").mkdir(parents=True, exist_ok=True)
-
-        self.pause_image_path = os.path.join(self.speech_dir, "pause_image.png")
-        self.save_pause_image()
         self.silences = find_silences(self.audio.file_path)
-
         self.transcription = whisper_transcribe(init_model(config.whisper_model_size, config.device),
                                                 self.audio.file_path)
 
-    def save_pause_image(self):
-        region = auditok.load(self.audio.file_path)
-        _ = region.split_and_plot(drop_trailing_silence=True, save_as=self.pause_image_path, show=False)
+    def save_auditok_image(self, width=720, height=80):
+        dpi = 100
 
+        region = auditok.load(self.audio.file_path)
+        _ = region.split_and_plot(drop_trailing_silence=True, save_as=f"{self.speech_dir}/auditok_image.png",
+                                  show=False, figsize=(width/dpi, height/dpi))
+
+    def generate_and_save_pause_image(self, width=720, height=40):
+        dpi = 100
+        fig_width = width / dpi
+        fig_height = height / dpi
+
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        ax.axhspan(0, 1, facecolor='white')
+
+        stripe_positions = [silence.start / self.audio.duration_float_seconds for silence in self.silences]
+        stripe_widths = [(silence.end - silence.start) / self.audio.duration_float_seconds for silence in
+                         self.silences]
+        stripe_height = 0.8
+
+        for position, width in zip(stripe_positions, stripe_widths):
+            ax.axvline(x=position, color='black', linewidth=1)
+            ax.axvspan(position, position + width, ymin=(1 - stripe_height) / 2, ymax=(1 + stripe_height) / 2,
+                       facecolor='black')
+
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        plt.savefig(f'{self.speech_dir}/pause_image.png')

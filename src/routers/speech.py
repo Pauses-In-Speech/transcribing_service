@@ -42,12 +42,34 @@ async def get_speech(speech_id: str):
         return {"Speech ID not in DB!"}
 
 
+@router.get("/auditok_image/{speech_id}")
+async def get_auditok_image(speech_id: str, width: int = 720, height: int = 80):
+    current_speech: Speech = speech_db_table.get(speech_id)
+
+    if current_speech:
+        current_speech.save_auditok_image(width, height)
+        return FileResponse(path=f"{current_speech.speech_dir}/auditok_image.png",
+                            filename=f"{speech_id}_auditok_image.png]",
+                            media_type="image/png")
+    else:
+        return {
+            "message": f"Could not find speech with id: {speech_id}"
+        }
+
+
 @router.get("/pause_image/{speech_id}")
-async def get_pause_image(speech_id: str):
-    if speech_id in speech_db_table.keys():
-        return FileResponse(path=f"{speech_db_table[speech_id].speech_dir}/pause_image.png",
+async def get_audio_image(speech_id: str, width: int = 720, height: int = 40):
+    current_speech: Speech = speech_db_table.get(speech_id)
+
+    if current_speech:
+        current_speech.generate_and_save_pause_image(width, height)
+        return FileResponse(path=f"{current_speech.speech_dir}/pause_image.png",
                             filename=f"{speech_id}_pause_image.png]",
                             media_type="image/png")
+    else:
+        return {
+            "message": f"Could not find speech with id: {speech_id}"
+        }
 
 
 @router.delete("/{speech_id}")
