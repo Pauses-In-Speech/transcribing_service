@@ -25,7 +25,7 @@ def auditok_custom_plot(
         scale_signal=True,
         detections=None,
         energy_threshold=None,
-        show=True,
+        show=False,
         figsize=None,
         save_as=None,
         dpi=120,
