@@ -1,5 +1,4 @@
 import datetime
-import os
 from pathlib import Path
 
 import auditok
@@ -8,6 +7,7 @@ from matplotlib import pyplot as plt
 from src.config import Config
 from src.custom_classes.silences import find_silences
 from src.routers.audio import Audio
+from src.utils.plotting import auditok_custom_plot
 from src.whisper_funcs import whisper_transcribe, init_model
 
 
@@ -36,8 +36,11 @@ class Speech:
         dpi = 100
 
         region = auditok.load(self.audio.file_path)
-        _ = region.split_and_plot(drop_trailing_silence=True, save_as=f"{self.speech_dir}/auditok_image.png",
-                                  show=False, figsize=(width/dpi, height/dpi))
+        regions = region.split(drop_trailing_silence=True)
+        detections = ((reg.meta.start, reg.meta.end) for reg in regions)
+
+        auditok_custom_plot(region, save_as=f"{self.speech_dir}/auditok_image.png", figsize=(width / dpi, height / dpi),
+                            detections=detections, dpi=dpi, show=True)
 
     def generate_and_save_pause_image(self, width=720, height=40):
         dpi = 100
@@ -67,3 +70,15 @@ class Speech:
         fig.tight_layout(pad=0)
 
         plt.savefig(f'{self.speech_dir}/pause_image.png', transparent=True)
+
+
+# dpi = 100
+# width = 1200
+# height = 200
+# region = auditok.load("/home/levente/repos/uni/Pauses In Speech/transcribing_service/src/data/audio/effibriest_01_fontane_64kb_short.mp3")
+#
+# regions = region.split(drop_trailing_silence=True)
+# detections = ((reg.meta.start, reg.meta.end) for reg in regions)
+#
+#
+# auditok_custom_plot(region, save_as=f"auditok_image.png", figsize=(width / dpi, height / dpi), detections=detections, dpi=dpi)
