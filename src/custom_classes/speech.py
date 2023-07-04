@@ -45,7 +45,7 @@ class Speech:
         fig_height = height / dpi
 
         fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-        ax.axhspan(0, 1, facecolor='white')
+        ax.axhspan(0, 1, alpha=.0)
 
         stripe_positions = [silence.start / self.audio.duration_float_seconds for silence in self.silences]
         stripe_widths = [(silence.end - silence.start) / self.audio.duration_float_seconds for silence in
@@ -63,6 +63,7 @@ class Speech:
         ax.set_xticks([])
         ax.set_yticks([])
 
+        ax.axis("off")
         fig.tight_layout(pad=0)
 
-        plt.savefig(f'{self.speech_dir}/pause_image.png')
+        plt.savefig(f'{self.speech_dir}/pause_image.png', transparent=True)
