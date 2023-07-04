@@ -40,7 +40,7 @@ class Speech:
         detections = ((reg.meta.start, reg.meta.end) for reg in regions)
 
         auditok_custom_plot(region, save_as=f"{self.speech_dir}/auditok_image.png", figsize=(width / dpi, height / dpi),
-                            detections=detections, dpi=dpi, show=True)
+                            detections=detections, dpi=dpi)
 
     def generate_and_save_pause_image(self, width=720, height=40):
         dpi = 100
@@ -70,15 +70,3 @@ class Speech:
         fig.tight_layout(pad=0)
 
         plt.savefig(f'{self.speech_dir}/pause_image.png', transparent=True)
-
-
-# dpi = 100
-# width = 1200
-# height = 200
-# region = auditok.load("/home/levente/repos/uni/Pauses In Speech/transcribing_service/src/data/audio/effibriest_01_fontane_64kb_short.mp3")
-#
-# regions = region.split(drop_trailing_silence=True)
-# detections = ((reg.meta.start, reg.meta.end) for reg in regions)
-#
-#
-# auditok_custom_plot(region, save_as=f"auditok_image.png", figsize=(width / dpi, height / dpi), detections=detections, dpi=dpi)
