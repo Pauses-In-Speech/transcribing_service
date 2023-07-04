@@ -63,4 +63,6 @@ class Speech:
         ax.set_xticks([])
         ax.set_yticks([])
 
+        fig.tight_layout(pad=0)
+
         plt.savefig(f'{self.speech_dir}/pause_image.png')
