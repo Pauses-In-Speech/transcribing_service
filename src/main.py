@@ -19,7 +19,10 @@ from src.routers.speech import reload_speech_db
 from src.whisper_funcs import init_model
 from src.routers import audio, speech
 
-app = FastAPI()
+app = FastAPI(
+    title="Pauses In Speech: Transcribing Service",
+    version="0.1.0",
+)
 
 origins = [
     "http://localhost:3000",
@@ -34,7 +37,7 @@ app.add_middleware(
 )
 
 
-@app.delete("/db_and_data/")
+@app.delete("/db_and_data/", tags=["General ⚙️"])
 def clear_all_data():
     message = ""
     try:

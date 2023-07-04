@@ -8,7 +8,8 @@ from src.routers.audio import Audio
 
 router = APIRouter(
     prefix="/speech",
-    dependencies=[Depends(get_config)]
+    dependencies=[Depends(get_config)],
+    tags=["Speech 🗣️"]
 )
 
 speech_db_table = SqliteDict(get_config().db_name, tablename="speech", autocommit=True)
@@ -35,7 +36,7 @@ def get_speeches():
 
 
 @router.get("/{speech_id}")
-async def get_speech(speech_id: str):
+async def get_speech_info(speech_id: str):
     if speech_id in speech_db_table:
         return speech_db_table[speech_id]
     else:
@@ -58,7 +59,7 @@ async def get_auditok_image(speech_id: str, width: int = 720, height: int = 80):
 
 
 @router.get("/pause_image/{speech_id}")
-async def get_audio_image(speech_id: str, width: int = 720, height: int = 40):
+async def get_pause_image(speech_id: str, width: int = 720, height: int = 40):
     current_speech: Speech = speech_db_table.get(speech_id)
 
     if current_speech:
@@ -73,7 +74,7 @@ async def get_audio_image(speech_id: str, width: int = 720, height: int = 40):
 
 
 @router.delete("/{speech_id}")
-def clear_all_data(speech_id: str):
+def delete_speech(speech_id: str):
     if speech_id in speech_db_table:
         res = speech_db_table.pop(speech_id)
         if res:

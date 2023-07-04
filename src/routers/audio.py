@@ -12,7 +12,8 @@ from src.routers.speech import create_speech
 
 router = APIRouter(
     prefix="/audio",
-    dependencies=[Depends(get_config)]
+    dependencies=[Depends(get_config)],
+    tags=["Audio 🎵"]
 )
 
 audio_db_table = SqliteDict(get_config().db_name, tablename="audio", autocommit=True)
@@ -30,7 +31,7 @@ async def get_audios():
 
 
 @router.get("/{audio_id}")
-async def get_audio(audio_id: str):
+async def get_audio_info(audio_id: str):
     if audio_id in audio_db_table:
         return audio_db_table[audio_id]
 
@@ -78,7 +79,7 @@ async def upload_file(file: Union[UploadFile, None] = None):
 
 
 @router.delete("/{audio_id}")
-def clear_all_data(audio_id: str):
+def delete_audio(audio_id: str):
     if audio_id in audio_db_table:
         res = audio_db_table.pop(audio_id)
         if res:
