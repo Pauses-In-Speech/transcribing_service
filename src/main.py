@@ -9,6 +9,7 @@ from sqlitedict import SqliteDict
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 my_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(my_path)
@@ -35,6 +36,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/", response_class=RedirectResponse)
+async def redirect_fastapi():
+    return "http://0.0.0.0:8000/docs"
 
 
 @app.delete("/db_and_data/", tags=["General ⚙️"])
