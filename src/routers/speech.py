@@ -73,6 +73,18 @@ async def get_pause_image(speech_id: str, width: int = 720, height: int = 40):
         }
 
 
+@router.get("/statistics/{speech_id}")
+async def get_speech_obj_statistics(speech_id: str):
+    current_speech: Speech = speech_db_table.get(speech_id)
+
+    if current_speech:
+        return current_speech.get_statistics()
+    else:
+        return {
+            "message": f"Could not find speech with id: {speech_id}"
+        }
+
+
 @router.delete("/{speech_id}")
 def delete_speech(speech_id: str):
     if speech_id in speech_db_table:

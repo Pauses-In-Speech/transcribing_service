@@ -1,5 +1,6 @@
 import datetime
 from pathlib import Path
+from statistics import mean
 
 import auditok
 from matplotlib import pyplot as plt
@@ -9,6 +10,11 @@ from src.custom_classes.silences import find_silences
 from src.routers.audio import Audio
 from src.utils.plotting import auditok_custom_plot
 from src.whisper_funcs import whisper_transcribe, init_model
+
+
+def get_wpm(transcription):
+    text = transcription["text"]
+    return text
 
 
 class Speech:
@@ -31,6 +37,29 @@ class Speech:
         self.silences = find_silences(self.audio.file_path)
         self.transcription = whisper_transcribe(init_model(config.whisper_model_size, config.device),
                                                 self.audio.file_path)
+
+    def get_wpm(self):
+        words = len(list(filter(lambda x: x, self.transcription["text"].split(" "))))
+        return words / self.audio.duration_float_seconds * 60
+
+    def get_statistics(self):
+        """
+        Gives some statistics on the self speech object.
+
+        :return:
+        dict {
+        pauses: number of pauses in speech
+        ppm: frequency of pauses in pauses / minute
+        apl: average pause length in seconds
+        wpm: frequency of words in word / minute
+        }
+        """
+        return {
+            "pauses": len(self.silences),
+            "ppm": len(self.silences) / self.audio.duration_float_seconds * 60,
+            "apl": mean([silence.end - silence.start for silence in self.silences]),
+            "wpm": self.get_wpm()
+        }
 
     def save_auditok_image(self, width=720, height=80):
         dpi = 100
