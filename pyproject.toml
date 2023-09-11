@@ -8,7 +8,7 @@ packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.9"
-whisper-timestamped = {git = "https://github.com/linto-ai/whisper-timestamped", rev="068ac07"}
+whisper-timestamped = {git = "https://github.com/linto-ai/whisper-timestamped", rev="127e8b738756420487210490d09938593244b3dd"}
 numpy = "1.23.5"
 auditok = "^0.2.0"
 pydub = "^0.25.1"
