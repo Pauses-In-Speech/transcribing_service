@@ -1,4 +1,4 @@
-FROM python:3.9.16
+FROM python:3.9.18
 
 RUN apt-get update &&\
     apt-get upgrade -y &&\

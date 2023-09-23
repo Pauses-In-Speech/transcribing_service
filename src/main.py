@@ -11,6 +11,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
+from src.user_management.schemas import UserRead, UserCreate, UserUpdate
+
 my_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(my_path)
 
@@ -19,6 +21,7 @@ from src.routers.audio import reload_audio_db
 from src.routers.speech import reload_speech_db
 from src.whisper_funcs import init_model
 from src.routers import audio, speech
+from src.user_management.users import auth_backend, current_active_user, fastapi_users
 
 app = FastAPI(
     title="Pauses In Speech: Transcribing Service",
@@ -97,5 +100,29 @@ if __name__ == '__main__':
 
     app.include_router(audio.router)
     app.include_router(speech.router)
+
+    app.include_router(
+        fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"]
+    )
+    app.include_router(
+        fastapi_users.get_register_router(UserRead, UserCreate),
+        prefix="/auth",
+        tags=["auth"],
+    )
+    app.include_router(
+        fastapi_users.get_reset_password_router(),
+        prefix="/auth",
+        tags=["auth"],
+    )
+    app.include_router(
+        fastapi_users.get_verify_router(UserRead),
+        prefix="/auth",
+        tags=["auth"],
+    )
+    app.include_router(
+        fastapi_users.get_users_router(UserRead, UserUpdate),
+        prefix="/users",
+        tags=["users"],
+    )
 
     uvicorn.run(app, host="0.0.0.0", port=8000)

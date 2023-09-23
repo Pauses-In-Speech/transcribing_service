@@ -2,13 +2,9 @@ import datetime
 from pathlib import Path
 from statistics import mean
 
-import auditok
-from matplotlib import pyplot as plt
-
 from src.config import Config
 from src.custom_classes.silences import find_silences
 from src.routers.audio import Audio
-from src.utils.plotting import auditok_custom_plot
 from src.whisper_funcs import whisper_transcribe, init_model
 
 
