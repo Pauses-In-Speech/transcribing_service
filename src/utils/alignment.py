@@ -23,6 +23,9 @@ def get_best_match(query, corpus, step=4, flex=3, case_sensitive=False, verbose=
         Match ratio of best matching substring. 1 is perfect match.
     """
 
+    step = max(step, len(query))
+    flex = max(flex, len(query) // 2)
+
     def _match(a, b):
         """Compact alias for SequenceMatcher."""
         return SequenceMatcher(None, a, b).ratio()
