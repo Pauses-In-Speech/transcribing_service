@@ -8,7 +8,9 @@ from starlette.responses import FileResponse
 
 from src.config import get_config
 from src.custom_classes.audio import Audio
+from src.custom_classes.user_management import User
 from src.routers.speech import create_speech
+from src.user_management.users import fastapi_users
 
 router = APIRouter(
     prefix="/audio",
@@ -17,6 +19,7 @@ router = APIRouter(
 )
 
 audio_db_table = SqliteDict(get_config().db_name, tablename="audio", autocommit=True)
+current_active_verified_user = fastapi_users.current_user(active=True, verified=True)
 
 
 def reload_audio_db():
@@ -26,7 +29,7 @@ def reload_audio_db():
 
 
 @router.get("/")
-async def get_audios():
+async def get_audios(user: User = Depends(current_active_verified_user)):
     return audio_db_table.values()
 
 

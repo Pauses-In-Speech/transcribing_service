@@ -3,7 +3,7 @@ from sqlitedict import SqliteDict
 from starlette.responses import FileResponse
 
 from src.config import Config, get_config
-from src.custom_classes.speech import Speech
+from src.custom_classes.speech import Speech, TranscriptPost
 from src.routers.audio import Audio
 
 router = APIRouter(
@@ -52,6 +52,19 @@ async def get_speech_obj_statistics(speech_id: str):
     else:
         return {
             "message": f"Could not find speech with id: {speech_id}"
+        }
+
+
+@router.post("/transcript/")
+async def add_verified_transcript(transcript: TranscriptPost):
+    current_speech: Speech = speech_db_table.get(transcript.speech_id)
+
+    if current_speech:
+        current_speech.correct_transcription(transcript.corrected_transcript)
+        return current_speech.transcription
+    else:
+        return {
+            "message": f"Could not find speech with id: {transcript.speech_id}"
         }
 
 

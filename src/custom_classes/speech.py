@@ -2,9 +2,12 @@ import datetime
 from pathlib import Path
 from statistics import mean
 
+from pydantic import BaseModel
+
 from src.config import Config
 from src.custom_classes.silences import find_silences
 from src.routers.audio import Audio
+from src.utils.alignment import get_best_match
 from src.whisper_funcs import whisper_transcribe, init_model
 
 
@@ -56,3 +59,15 @@ class Speech:
             "apl": mean([silence.end - silence.start for silence in self.silences]),
             "wpm": self.get_wpm()
         }
+
+    def correct_transcription(self, corpus):
+        segments = self.transcription["segments"]
+        for idx, segment in enumerate(segments):
+            best_segment_match = get_best_match(segment["text"], corpus, step=4, flex=5, case_sensitive=True, verbose=False)
+            self.transcription["segments"][idx]["text_corrected"] = self.transcription["segments"][idx]["text"]
+            self.transcription["segments"][idx]["text"] = best_segment_match
+
+
+class TranscriptPost(BaseModel):
+    speech_id: str
+    corrected_transcript: str
