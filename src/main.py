@@ -66,14 +66,12 @@ def clear_all_data():
         shutil.rmtree('./data')
     except:
         message += "Data dir not found!"
-
     try:
         os.remove("./pins_db.sqlite")
     except:
         message += "Database not found!"
 
     message += "Cleared data!"
-
     try:
         init_db(config.db_name)
         reload_audio_db()
@@ -81,14 +79,12 @@ def clear_all_data():
         init_dat_dir()
     except:
         message += "Could not reinitialize data and db!/n"
-
     return {"message": message}
 
 
 def init_dat_dir():
     Path("data").mkdir(exist_ok=True)
     Path("data/audio").mkdir(parents=True, exist_ok=True)
-    Path("data/speech").mkdir(parents=True, exist_ok=True)
 
 
 def init_db(db_name):
