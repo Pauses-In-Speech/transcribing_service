@@ -13,9 +13,9 @@ def get_audio_duration(audio_path: str) -> Tuple[float, str]:
 
 
 class Audio:
-    def __init__(self, audio_path, file_type, content_type, user_id):
+    def __init__(self, audio_path, content_type, user_id, file_type):
         self.file_path: str = audio_path
         self.duration_float_seconds, self.duration_pretty = get_audio_duration(audio_path)
-        self.file_type = ""
         self.content_type: str = content_type
-        self.user_id: str = "default"
+        self.user_id: str = user_id
+        self.file_type: str = file_type

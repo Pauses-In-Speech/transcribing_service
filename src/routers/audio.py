@@ -84,9 +84,9 @@ async def upload_file(file: Union[UploadFile, None] = None, user: User = Depends
         else:
             local_audio_path = await store_audio_file(file, user_id)
             audio_db_table[new_audio_id] = Audio(local_audio_path,
-                                                 file.filename.split(".")[-1],
                                                  file.content_type,
-                                                 user_id)
+                                                 user_id,
+                                                 file.filename.split(".")[-1])
             create_speech(get_config(), audio_db_table[new_audio_id])
             return {
                 "message": "File successfully uploaded!",
