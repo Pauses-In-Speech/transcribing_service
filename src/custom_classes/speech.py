@@ -21,7 +21,8 @@ class Speech:
                  config: Config,
                  audio: Audio):
         new_id = audio.file_path.split(".")[-2].split("/")[-1]
-        self.id = new_id
+        self.id = f"{audio.user_id}_{new_id}"
+        self.user_id = audio.user_id
 
         now = datetime.datetime.now()
         self.upload_date = {
@@ -31,8 +32,6 @@ class Speech:
         }
 
         self.audio = audio
-        self.speech_dir = f"{config.local_data_path}/speech/{new_id}"
-        Path(f"{config.local_data_path}/speech/{self.id}").mkdir(parents=True, exist_ok=True)
         self.silences = find_silences(self.audio.file_path)
         self.transcription = whisper_transcribe(init_model(config.whisper_model_size, config.device),
                                                 self.audio.file_path)
@@ -63,7 +62,7 @@ class Speech:
     def correct_transcription(self, corpus):
         segments = self.transcription["segments"]
         for idx, segment in enumerate(segments):
-            best_segment_match = get_best_match(segment["text"], corpus, step=4, flex=5, case_sensitive=True, verbose=False)
+            best_segment_match = get_best_match(segment["text"], corpus, step=min(4, len(segment["text"])), flex=min(4, len(segment["text"]) // 2), case_sensitive=True, verbose=False)
             self.transcription["segments"][idx]["text_corrected"] = self.transcription["segments"][idx]["text"]
             self.transcription["segments"][idx]["text"] = best_segment_match
 

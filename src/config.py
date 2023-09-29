@@ -9,7 +9,7 @@ class Config(BaseModel):
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     local_data_path: str = "./data"
     whisper_model_size: str = "tiny"
-    db_name: str = "pins_db.sqlite"
+    db_name: str = f"{local_data_path}/pins_db.sqlite"
     allowed_content_types: List[str] = ["audio/mpeg", "audio/wav"]
 
     # Config instances are immutable after initialization

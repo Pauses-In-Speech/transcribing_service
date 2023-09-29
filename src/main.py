@@ -100,7 +100,8 @@ if __name__ == '__main__':
     model = init_model(config.whisper_model_size, config.device)
 
     # load db
-    db = init_db(config.db_name)
+    init_dat_dir()
+    db = init_db(f"{config.db_name}")
 
     if len(db) > 0:
         # check if files mentioned in db are there

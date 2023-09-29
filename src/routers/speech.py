@@ -1,14 +1,17 @@
 from fastapi import APIRouter, Depends
 from sqlitedict import SqliteDict
-from starlette.responses import FileResponse
 
+from src.custom_classes.user_management import User
 from src.config import Config, get_config
 from src.custom_classes.speech import Speech, TranscriptPost
 from src.routers.audio import Audio
+from src.user_management.users import fastapi_users
+
+current_user = fastapi_users.current_user(optional=True)
 
 router = APIRouter(
     prefix="/speech",
-    dependencies=[Depends(get_config)],
+    dependencies=[Depends(get_config), Depends(current_user)],
     tags=["Speech 🗣️"]
 )
 
@@ -21,8 +24,15 @@ def reload_speech_db():
     speech_db_table = SqliteDict(get_config().db_name, tablename="speech", autocommit=True)
 
 
+def get_userid_and_user_speeches(user: User, speech_db_table=speech_db_table):
+    user_id: str = str(user.id) if user else "default"
+    user_speeches = {speech_id: speech for speech_id, speech in speech_db_table.items() if
+                     (speech and speech.user_id == user_id)}
+    return user_id, user_speeches
+
+
 def create_speech(config: Config, audio: Audio):
-    new_id = audio.file_path.split(".")[-2].split("/")[-1]
+    new_id = f"{audio.user_id}_{audio.file_path.split('.')[-2].split('/')[-1]}"
     if new_id not in speech_db_table:
         speech = Speech(config, audio)
         speech_db_table[new_id] = speech
@@ -31,24 +41,26 @@ def create_speech(config: Config, audio: Audio):
 
 
 @router.get("/")
-def get_speeches():
-    return speech_db_table.values()
+def get_speeches(user: User = Depends(current_user)):
+    _, user_speeches = get_userid_and_user_speeches(user, speech_db_table)
+    return list(user_speeches.values())
 
 
 @router.get("/{speech_id}")
-async def get_speech_info(speech_id: str):
-    if speech_id in speech_db_table:
+async def get_speech_info(speech_id: str, user: User = Depends(current_user)):
+    _, user_speeches = get_userid_and_user_speeches(user, speech_db_table)
+    if speech_id in user_speeches:
         return speech_db_table[speech_id]
     else:
-        return {"Speech ID not in DB!"}
+        return {"Speech ID not in user DB!"}
 
 
 @router.get("/statistics/{speech_id}")
-async def get_speech_obj_statistics(speech_id: str):
-    current_speech: Speech = speech_db_table.get(speech_id)
+async def get_speech_obj_statistics(speech_id: str, user: User = Depends(current_user)):
+    _, user_speeches = get_userid_and_user_speeches(user, speech_db_table)
 
-    if current_speech:
-        return current_speech.get_statistics()
+    if speech_id in user_speeches:
+        return speech_db_table[speech_id].get_statistics()
     else:
         return {
             "message": f"Could not find speech with id: {speech_id}"
@@ -56,8 +68,9 @@ async def get_speech_obj_statistics(speech_id: str):
 
 
 @router.post("/transcript/")
-async def add_verified_transcript(transcript: TranscriptPost):
-    current_speech: Speech = speech_db_table.get(transcript.speech_id)
+async def add_verified_transcript(transcript: TranscriptPost, user: User = Depends(current_user)):
+    _, user_speeches = get_userid_and_user_speeches(user, speech_db_table)
+    current_speech: Speech = user_speeches.get(transcript.speech_id)
 
     if current_speech:
         current_speech.correct_transcription(transcript.corrected_transcript)
@@ -69,8 +82,10 @@ async def add_verified_transcript(transcript: TranscriptPost):
 
 
 @router.delete("/{speech_id}")
-def delete_speech(speech_id: str):
-    if speech_id in speech_db_table:
+def delete_speech(speech_id: str, user: User = Depends(current_user)):
+    _, user_speeches = get_userid_and_user_speeches(user, speech_db_table)
+
+    if speech_id in user_speeches:
         res = speech_db_table.pop(speech_id)
         if res:
             return {"message": f"Deleted {speech_id}!"}
