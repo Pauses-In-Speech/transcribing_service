@@ -129,11 +129,6 @@ if __name__ == '__main__':
         tags=["Auth 🔐"],
     )
     app.include_router(
-        fastapi_users.get_verify_router(UserRead),
-        prefix="/auth",
-        tags=["Auth 🔐"],
-    )
-    app.include_router(
         fastapi_users.get_users_router(UserRead, UserUpdate),
         prefix="/users",
         tags=["Users 👥"],
