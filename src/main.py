@@ -4,6 +4,9 @@ from pathlib import Path
 import os.path
 import sys
 
+my_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(my_path)
+
 from sqlitedict import SqliteDict
 
 import uvicorn
@@ -15,8 +18,6 @@ from src.custom_classes.user_management import User
 from src.user_management.db import create_db_and_tables
 from src.user_management.schemas import UserRead, UserCreate, UserUpdate
 
-my_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.append(my_path)
 
 from src.config import Config
 from src.routers.audio import reload_audio_db
