@@ -13,7 +13,7 @@ from src.custom_classes.user_management import User
 from src.routers.speech import create_speech
 from src.user_management.users import fastapi_users
 
-current_user = fastapi_users.current_user(optional=True)
+current_user = fastapi_users.current_user()
 
 router = APIRouter(
     prefix="/audio",
@@ -22,7 +22,9 @@ router = APIRouter(
 )
 
 audio_db_table = SqliteDict(get_config().db_name, tablename="audio", autocommit=True)
-
+"""
+Use the short audio id for outwards communication, but store the full user audio id in the database.
+"""
 
 def reload_audio_db():
     global audio_db_table
@@ -45,20 +47,24 @@ async def get_audios(user: User = Depends(current_user)):
 
 @router.get("/{audio_id}")
 async def get_audio_info(audio_id: str, user: User = Depends(current_user)):
-    _, user_audios = get_userid_and_user_audios(user, audio_db_table)
-    if audio_id in user_audios:
-        return audio_db_table[audio_id]
+    user_id, user_audios = get_userid_and_user_audios(user, audio_db_table)
+    user_audio_id = f"{user_id}_{audio_id}"
+
+    if user_audio_id in user_audios:
+        return audio_db_table[user_audio_id]
     else:
-        return {"Audio ID not in user DB!"}
+        return {f"Audio ID: {audio_id} not in user DB!"}
 
 
 @router.get("/download/{audio_id}")
 async def download_audio(audio_id: str, user: User = Depends(current_user)):
-    _, user_audios = get_userid_and_user_audios(user, audio_db_table)
-    if audio_id in user_audios:
-        return FileResponse(path=audio_db_table[audio_id].file_path,
-                            filename=f"{audio_id}.{audio_db_table[audio_id].file_type}",
-                            media_type=audio_db_table[audio_id].content_type)
+    user_id, user_audios = get_userid_and_user_audios(user, audio_db_table)
+    user_audio_id = f"{user_id}_{audio_id}"
+
+    if user_audio_id in user_audios:
+        return FileResponse(path=audio_db_table[user_audio_id].file_path,
+                            filename=f"{user_audio_id}.{audio_db_table[user_audio_id].file_type}",
+                            media_type=audio_db_table[user_audio_id].content_type)
 
 
 async def store_audio_file(file, user_id):
@@ -71,9 +77,10 @@ async def store_audio_file(file, user_id):
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def upload_file(file: Union[UploadFile, None] = None, user: User = Depends(current_user)):
+async def upload_audio_file(file: Union[UploadFile, None] = None, user: User = Depends(current_user)):
     user_id, user_audios = get_userid_and_user_audios(user, audio_db_table)
-    new_audio_id = f"{user_id}_{file.filename.split('.')[:-1][0]}"
+    short_audio_id = file.filename.split('.')[:-1][0]
+    new_audio_id = f"{user_id}_{short_audio_id}"
 
     if new_audio_id not in user_audios:
         if file.content_type not in get_config().allowed_content_types:
@@ -90,20 +97,22 @@ async def upload_file(file: Union[UploadFile, None] = None, user: User = Depends
             create_speech(get_config(), audio_db_table[new_audio_id])
             return {
                 "message": "File successfully uploaded!",
-                "audio_id": new_audio_id
+                "audio_id": short_audio_id
             }
     else:
         return {
             "message": "File already exists",
-            "audio_id": new_audio_id
+            "audio_id": short_audio_id
         }
 
 
 @router.delete("/{audio_id}")
 def delete_audio(audio_id: str, user: User = Depends(current_user)):
     user_id, user_audios = get_userid_and_user_audios(user, audio_db_table)
-    if audio_id in user_audios:
-        res = audio_db_table.pop(audio_id)
+    user_audio_id = f"{user_id}_{audio_id}"
+
+    if user_audio_id in user_audios:
+        res = audio_db_table.pop(user_audio_id)
         if res:
             return {"message": f"Deleted {audio_id}!"}
         else:
