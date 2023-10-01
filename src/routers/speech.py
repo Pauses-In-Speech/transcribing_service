@@ -1,5 +1,4 @@
-import io
-import shutil
+import os
 from typing import Union
 
 import aiofiles
@@ -8,7 +7,7 @@ from sqlitedict import SqliteDict
 
 from src.custom_classes.user_management import User
 from src.config import Config, get_config
-from src.custom_classes.speech import Speech, TranscriptPost
+from src.custom_classes.speech import Speech
 from src.routers.audio import Audio
 from src.user_management.users import fastapi_users
 
@@ -45,6 +44,20 @@ def create_speech(config: Config, audio: Audio):
         print("This ID already exists!")
 
 
+def delete_speech(user, speech_id):
+    user_id, user_speeches = get_userid_and_user_speeches(user, speech_db_table)
+    user_speech_id = f"{user_id}_{speech_id}"
+
+    if user_speech_id in user_speeches:
+        res = speech_db_table.pop(user_speech_id)
+        if res:
+            return {"message": f"Deleted {speech_id}!"}
+        else:
+            return {"message": f"Could not delete {speech_id}"}
+    else:
+        return {"message": f"{speech_id} not found!"}
+
+
 @router.get("/")
 def get_speeches(user: User = Depends(current_user)):
     _, user_speeches = get_userid_and_user_speeches(user, speech_db_table)
@@ -77,7 +90,7 @@ async def get_speech_obj_statistics(speech_id: str, user: User = Depends(current
 
 @router.post("/transcript/")
 async def upload_verified_transcript(speech_id: str, file: Union[UploadFile, None] = None,
-                                  user: User = Depends(current_user)):
+                                     user: User = Depends(current_user)):
     user_id, user_speeches = get_userid_and_user_speeches(user, speech_db_table)
     user_speech_id = f"{user_id}_{speech_id}"
     current_speech: Speech = user_speeches.get(user_speech_id)
@@ -93,9 +106,11 @@ async def upload_verified_transcript(speech_id: str, file: Union[UploadFile, Non
             for line in in_file:
                 corpus.append(line)
 
-        current_speech.correct_transcription(corpus)
-        shutil.rmtree(local_transcript_path)  # delete local transcript file after use
-        return current_speech.transcription
+        flattened_corpus = "".join(corpus)
+        current_speech.correct_transcription(flattened_corpus)
+        os.remove(local_transcript_path)  # delete local transcript file after use
+        speech_db_table[user_speech_id] = current_speech
+        return speech_db_table[user_speech_id]
     else:
         return {
             "message": f"Could not find speech with id: {speech_id}"
@@ -103,16 +118,5 @@ async def upload_verified_transcript(speech_id: str, file: Union[UploadFile, Non
 
 
 @router.delete("/{speech_id}")
-def delete_speech(speech_id: str, user: User = Depends(current_user)):
-    user_id, user_speeches = get_userid_and_user_speeches(user, speech_db_table)
-    user_speech_id = f"{user_id}_{speech_id}"
-
-    if user_speech_id in user_speeches:
-        res = speech_db_table.pop(user_speech_id)
-        if res:
-            return {"message": f"Deleted {speech_id}!"}
-        else:
-            return {"message": f"Could not delete {speech_id}"}
-
-    else:
-        return {"message": f"{speech_id} not found!"}
+def delete_speech_route(speech_id: str, user: User = Depends(current_user)):
+    return delete_speech(user, speech_id)

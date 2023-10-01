@@ -1,8 +1,5 @@
 import datetime
-from pathlib import Path
 from statistics import mean
-
-from pydantic import BaseModel
 
 from src.config import Config
 from src.custom_classes.silences import find_silences
@@ -64,9 +61,4 @@ class Speech:
         for idx, segment in enumerate(segments):
             best_segment_match = get_best_match(segment["text"], corpus, step=min(4, len(segment["text"])), flex=min(4, len(segment["text"]) // 2), case_sensitive=True, verbose=False)
             self.transcription["segments"][idx]["text_corrected"] = self.transcription["segments"][idx]["text"]
-            self.transcription["segments"][idx]["text"] = best_segment_match
-
-
-class TranscriptPost(BaseModel):
-    speech_id: str
-    corrected_transcript: str
+            self.transcription["segments"][idx]["text"] = best_segment_match[0]

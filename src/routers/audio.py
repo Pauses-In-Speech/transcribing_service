@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Union
 
@@ -10,7 +11,7 @@ from starlette.responses import FileResponse
 from src.config import get_config
 from src.custom_classes.audio import Audio
 from src.custom_classes.user_management import User
-from src.routers.speech import create_speech
+from src.routers.speech import create_speech, delete_speech
 from src.user_management.users import fastapi_users
 
 current_user = fastapi_users.current_user()
@@ -26,10 +27,16 @@ audio_db_table = SqliteDict(get_config().db_name, tablename="audio", autocommit=
 Use the short audio id for outwards communication, but store the full user audio id in the database.
 """
 
+
 def reload_audio_db():
     global audio_db_table
     audio_db_table = {}
     audio_db_table = SqliteDict(get_config().db_name, tablename="audio", autocommit=True)
+
+
+def delete_audio_from_db(user_audio_id: str ):
+    os.remove(audio_db_table[user_audio_id].file_path)
+    return audio_db_table.pop(user_audio_id)
 
 
 def get_userid_and_user_audios(user: User, audio_db_table=audio_db_table):
@@ -113,9 +120,12 @@ def delete_audio(audio_id: str, user: User = Depends(current_user)):
 
     if user_audio_id in user_audios:
         res = audio_db_table.pop(user_audio_id)
-        if res:
+        res_speech = delete_speech(user, audio_id)
+        if res and res_speech:
             return {"message": f"Deleted {audio_id}!"}
+        elif res and not res_speech:
+            return {"message": f"Deleted audio {audio_id}, but could not delete speech {audio_id}!"}
         else:
-            return {"message": f"Could not delete {audio_id}"}
+            return {"message": f"Deleted speech {audio_id}, but could not delete audio {audio_id}!"}
     else:
         return {"message": f"{audio_id} not found!"}
