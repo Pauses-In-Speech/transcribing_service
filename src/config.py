@@ -7,6 +7,7 @@ from pydantic.typing import List
 
 class Config(BaseModel):
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    # device: str = "cpu"
     local_data_path: str = "./data"
     whisper_model_size: str = "tiny"
     db_name: str = f"{local_data_path}/pins_db.sqlite"

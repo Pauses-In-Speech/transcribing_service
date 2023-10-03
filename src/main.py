@@ -18,8 +18,7 @@ from src.custom_classes.user_management import User
 from src.user_management.db import create_db_and_tables
 from src.user_management.schemas import UserRead, UserCreate, UserUpdate
 
-
-from src.config import Config
+from src.config import Config, get_config
 from src.routers.audio import reload_audio_db
 from src.routers.speech import reload_speech_db
 from src.whisper_funcs import init_model
@@ -61,10 +60,11 @@ async def on_startup():
 
 
 @app.delete("/db_and_data/", tags=["General ⚙️"])
-def clear_all_data():
+def clear_all_data_except_users():
+    config = get_config()
     message = ""
     try:
-        shutil.rmtree('./data')
+        shutil.rmtree(f"{config.local_data_path}/audio")
     except:
         message += "Data dir not found!"
     try:
@@ -74,18 +74,18 @@ def clear_all_data():
 
     message += "Cleared data!"
     try:
+        init_dat_dir(config.local_data_path)
         init_db(config.db_name)
         reload_audio_db()
         reload_speech_db()
-        init_dat_dir()
     except:
         message += "Could not reinitialize data and db!/n"
     return {"message": message}
 
 
-def init_dat_dir():
-    Path("data").mkdir(exist_ok=True)
-    Path("data/audio").mkdir(parents=True, exist_ok=True)
+def init_dat_dir(local_data_path: str):
+    Path(local_data_path).mkdir(exist_ok=True)
+    Path(f"{local_data_path}/audio").mkdir(parents=True, exist_ok=True)
 
 
 def init_db(db_name):
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     model = init_model(config.whisper_model_size, config.device)
 
     # load db
-    init_dat_dir()
+    init_dat_dir(config.local_data_path)
     db = init_db(f"{config.db_name}")
 
     if len(db) > 0:
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     else:
         # starting from scratch, let's lay the folder structure
         # os.mkdir("data", exist)
-        init_dat_dir()
+        init_dat_dir(config.local_data_path)
 
     app.include_router(audio.router)
     app.include_router(speech.router)

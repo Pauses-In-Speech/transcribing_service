@@ -20,6 +20,13 @@ short audio files.
 
 Open http://0.0.0.0:8000/docs in your browser and upload audio via the Swagger UI.
 
+## Running the service locally without Docker
+
+Install python dependencies via `poetry install` or `pip install -r requirements.txt`. Also make sure you have
+created a data folder and set the path to work with it in the config.
+
+Run the service with `poetry run python src/main.py` or `python src/main.py`.    
+
 ### Example data
 
 The example data is from LibriVox: https://librivox.org/effi-briest-by-theodor-fontane/

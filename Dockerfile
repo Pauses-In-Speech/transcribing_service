@@ -6,9 +6,8 @@ RUN apt-get update &&\
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
-
 ENV PYTHONPATH=$PYTHONPATH:/src
-
+RUN mkdir -p data/audio
 COPY src src
 
 ENTRYPOINT ["python", "src/main.py"]

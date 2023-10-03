@@ -5,7 +5,9 @@ from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-DATABASE_URL = "sqlite+aiosqlite:///./data/users_db.sqlite"
+from src.config import get_config
+
+DATABASE_URL = f"sqlite+aiosqlite:///./{get_config().local_data_path}/users_db.sqlite"
 
 
 class Base(DeclarativeBase):
