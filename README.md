@@ -15,7 +15,7 @@ Build the docker image at the repository root with `docker build . -t transcribi
 If you have the nvidia docker environment and want to speed up transcription run the docker with 
 `docker run --gpus all -p 8000:8000 -t transcribing_service`.
 
-To run on CPU use `docker run --gpus all -p 8000:8000 -t transcribing_service` and make sure to only use 
+To run on CPU use `docker run -p 8000:8000 -t transcribing_service` and make sure to only use 
 short audio files.
 
 Open http://0.0.0.0:8000/docs in your browser and upload audio via the Swagger UI.
@@ -25,7 +25,8 @@ Open http://0.0.0.0:8000/docs in your browser and upload audio via the Swagger U
 Install python dependencies via `poetry install` or `pip install -r requirements.txt`. Also make sure you have
 created a data folder and set the path to work with it in the config.
 
-Run the service with `poetry run python src/main.py` or `python src/main.py`.    
+For the initial start: `mkdir -p data/audio && poetry run python src/main.py` or `mkdir -p data/audio && python src/main.py`. Afterwards you can run the service via
+`poetry run python src/main.py` or `python src/main.py`.    
 
 ### Example data
 
