@@ -62,3 +62,9 @@ Speech objects are to be created when a new audio file is uploaded to the servic
 The response after the successful upload should return a link to both the audio file for downloading and
 the URI to the newly created speech object. While the speech object is being created, a GET should return 
 the estimated percentage of transcription.
+
+# Interactive API documentation
+
+The interactive OpenAPI documentation is available at http://localhost:8000/docs
+
+![screenshort of swagger ui](screenshot_swagger_docs.png)
